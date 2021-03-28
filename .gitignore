@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Custom project things
+prover_install/**/*
+test_files/**/*
