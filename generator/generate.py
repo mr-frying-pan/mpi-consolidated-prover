@@ -5,6 +5,9 @@ from .Templates import Templates
 from .Figures import Figures
 from .Formula import impl, conj
 
+n = None
+m = 1
+
 def generate():
     letters = ["A", "E", "I", "O"]
     modalTypes = [
@@ -43,21 +46,70 @@ def generate():
                                             conclusionType, conclusionModalType,\
                                             fig);
                                 allFormulas.add(full);
+                                if n is not None and len(allFormulas) >= n * m:
+                                    return list(allFormulas)
     return list(allFormulas)
 
+def printUnicode(fs: list):
+    for f in fs:
+        print(f.toUnicodeString())
+
 def printReprs(fs: list):
-    from .Formula import Formula
     for f in fs:
         print(f.__repr__())
         assert eval(repr(f)) == f, "Formula.__repr__() is not up to date"
+
+def printProlog(fs: list):
+    for f in fs:
+        print(f.toPrologTerm())
 
 def printPickle(fs: list):
     import pickle
     import sys
     pickle.dump(fs, sys.stdout.buffer, protocol=-1)
 
+def printTHF(fs: list):
+    for f in fs:
+        print(f.toTHF())
+
+def positive_int(value):
+    ival = int(value)
+    if ival <= 0:
+        raise argparse.ArgumentTypeError("invalid positive int value: '%s'" % (value,))
+    return ival
+
+def parseArgs():
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+    parser.add_argument('-n', help='number of formulas to output (taken from the start) (default behaviour is to output all formulas)', type=positive_int)
+    parser.add_argument('-m', help='every which formula to output (default=1)', type=positive_int, default=1)
+    outputFormatGroup = parser.add_mutually_exclusive_group(required=True)
+    outputFormatGroup.add_argument('-s', '--unicode', dest='outputFormat', action='store_const', const='s')
+    outputFormatGroup.add_argument('-r', '--repr', dest='outputFormat', action='store_const', const='r')
+    outputFormatGroup.add_argument('-p', '--prolog', dest='outputFormat', action='store_const', const='p')
+    outputFormatGroup.add_argument('-P', '--pickle', dest='outputFormat', action='store_const', const='P')
+    outputFormatGroup.add_argument('-t', '--thf', dest='outputFormat', action='store_const', const='t')
+
+    args = parser.parse_args()
+    global n
+    n = args.n
+    global m
+    m = args.m
+    return args.outputFormat
+    
 if __name__ == '__main__':
+    import argparse
+
+    # default output format is pickle
+    outputFormat = parseArgs()
     fs = generate()
 
-    #printReprs(fs)
-    printPickle(fs)
+    if outputFormat == 's':
+        printUnicode(fs[::m])
+    elif outputFormat == 'r':
+        printReprs(fs[::m])
+    elif outputFormat == 'p':
+        printProlog(fs[::m])
+    elif outputFormat == 'P':
+        printPickle(fs[::m])
+    elif outputFormat == 't':
+        printTHF(fs[::m])

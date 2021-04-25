@@ -129,5 +129,7 @@ dmypy.json
 .pyre/
 
 # Custom project things
-prover_install/**/*
 test_files/**/*
+prover_build/**/*
+pickle_formulas.dat
+results.csv

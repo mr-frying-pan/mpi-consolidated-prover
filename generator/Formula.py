@@ -64,6 +64,27 @@ class Formula:
         else:
             return 'UNDEFINED'
 
+    def toTHF(self):
+        if self._kind == 'pred':
+            return '(' + self._name.lower() + ' @ X)'
+        elif self._kind == 'neg':
+            return '(~ ' + self._rhs.toTHF() + ')'
+        elif self._kind == 'conj':
+            return '( ' + self._lhs.toTHF() + ' & ' + self._rhs.toTHF() + ' )'
+        elif self._kind == 'disj':
+            return '( ' + self._lhs.toTHF() + ' | ' + self._rhs.toTHF() + ' )'
+        elif self._kind == 'impl':
+            return '( ' + self._lhs.toTHF() + ' => ' + self._rhs.toTHF() + ' )'
+        elif self._kind == 'necc':
+            return '( $box @ ' + self._rhs.toTHF() + ' )'
+        elif self._kind == 'poss':
+            return '( $dia @ ' + self._rhs.toTHF() + ' )'
+        # not sure about these :/ Could also be a combination of these: !> ?* ^ @+ @-
+        elif self._kind == 'exists':
+            return '( ? [X: $i] : ' + self._rhs.toTHF() + ' )'
+        elif self._kind == 'forall':
+            return '( ! [X: $i] : ' + self._rhs.toTHF() + ' )'
+
     def __repr__(self):
         return 'Formula(kind=' + repr(self._kind)\
              + ', lhs=' + repr(self._lhs)\
