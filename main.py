@@ -66,12 +66,19 @@ def selectProver(worldRank):
 
 def printStats(role, wr, time, prover, report):
     stats = '''
-===========================
+===================================
 %s %d lasted for: %f s
 Prover: %s
 Stats:
-%s
-===========================''' % (role, wr, time, prover, report)
+    running time:       %f s
+    proving time:       %f s
+    processed:          %d
+    conclusion reached: %d
+===================================''' % (role, wr, time, prover,
+                                        report['timeProcessing'],
+                                        report['timeProving'],
+                                        report['processed'],
+                                        report['conclusionReached'])
     print(stats, file=sys.stderr)
 
 def main():
@@ -120,7 +127,7 @@ def main():
     if executiveComm == MPI.COMM_NULL:
         # workers are done here
         execEnd = time.perf_counter()
-        printStats('Worker', worldRank, execEnd - execStart, prover.name, str(prover.stats))
+        printStats('Worker', worldRank, execEnd - execStart, prover.name, prover.stats)
         return
 
     assert len(results) == 4
@@ -139,7 +146,7 @@ def main():
     if worldRank != 0:
         # leaders are done, only master remains
         execEnd = time.perf_counter()
-        printStats('Leader', worldRank, execEnd - execStart, prover.name, str(prover.stats))
+        printStats('Leader', worldRank, execEnd - execStart, prover.name, prover.stats)
         return
 
     finalResults = [result for groupResults in finalResults for result in groupResults]
@@ -150,7 +157,7 @@ def main():
         csvwriter.writerows(finalResults)
 
     execEnd = time.perf_counter()
-    printStats('Master', worldRank, execEnd - execStart, prover.name, str(prover.stats))
+    printStats('Master', worldRank, execEnd - execStart, prover.name, prover.stats)
     print('Total execution time:', execEnd - execStart, 's')
 
 if __name__ == '__main__':

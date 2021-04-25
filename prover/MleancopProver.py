@@ -54,7 +54,7 @@ class MleancopProver(Prover):
                 'Non-Theorem': False,
                 'Timeout': None
             }
-            isTheorem = statusMap['Theorem']
+            isTheorem = statusMap[status]
             if isTheorem:
                 proof = '\n'.join(lines[2:-1])
             else:
