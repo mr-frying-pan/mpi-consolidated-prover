@@ -17,47 +17,6 @@ proverBuilders = [
     lambda wr: Leo3Prover(wr, leo3_jar_path=settings['leo3_jar_path']),
 ]
 
-# result format (isTheorem, proof, counter)
-def mergeResults(mleancop, mleantap, leo2, leo3):
-    # ensure that all results are for the same formula
-    assert mleancop[0] == mleantap[0] == leo2[0] == leo3[0]
-    # don't know what to call this :( l stands for list :/
-    l = [mleancop[1], mleantap[1], leo2[1], leo3[1]]
-    theoremResultCount = l.count(True)
-    nonTheoremResultCount = l.count(False)
-
-    # some systems contradict each other
-    if theoremResultCount > 0 and nonTheoremResultCount > 0:
-        print('Contradiction:', mleancop[1], mleantap[1], leo2[1], leo3[1], file=sys.stderr)
-        isTheorem = 'Unknown'
-    # no contradiction and enough agree
-    elif theoremResultCount >= 2:
-        isTheorem = 'Theorem'
-    # no contradiction and enough agree
-    elif nonTheoremResultCount >= 1: # lower threshold since only is capable of saying this
-        isTheorem = 'Non-Theorem'
-    # no contradiction but not enough agree
-    else:
-        isTheorem = 'Unknown'
-
-    # proof preference:
-    #     1. leo3 – best format, newest system
-    #     2. leo2 – best format, quite dated (if I can make it run >:( )
-    #     3. mleancop – unreadable format
-    #
-    #   inf. mleantap – does not generate proof
-    if isTheorem and leo3[1]:
-        proof = leo3[2]
-    elif isTheorem and leo2[1]:
-        proof = leo2[2]
-    elif isTheorem and mleancop[1]:
-        proof = mleancop[2]
-    else:
-        proof = None
-
-    # none of the systems generate counterexamples :( Maybe with the addition of tpg that could be solved
-    return mleancop[0], isTheorem, proof, None
-
 def readPickle():
     import pickle
     with open(settings['formula_pickle_path'], 'rb') as f:
@@ -65,24 +24,63 @@ def readPickle():
 
 def printStats(role, wr, time, prover, report):
     stats = '''
-===================================
-%s %d lasted for: %f s
-Prover: %s
-Stats:
-    running time:       %f s
-    proving time:       %f s
-    processed:          %d
-    conclusion reached: %d
-===================================''' % (role, wr, time, prover,
-                                        report['timeProcessing'],
-                                        report['timeProving'],
-                                        report['processed'],
-                                        report['conclusionReached'])
+=======================================
+    %s %d lasted for:       %.2f s
+    Prover:                 %s
+    Stats:
+        running time:       %.2f s
+        proving time:       %.2f s
+        processed:          %d
+        conclusion reached: %d
+=======================================''' % (role, wr, time, prover,
+                                              report['timeProcessing'],
+                                              report['timeProving'],
+                                              report['processed'],
+                                              report['conclusionReached'])
     print(stats, file=sys.stderr)
+
+def consolidateResult(*results):
+    # check if all results are for the same formula
+    fs = [r[0] for r in results]
+    assert all([fs[0] == f for f in fs])
+
+    # count prover results
+    l = [r[1] for r in results]
+    countOfTheoremResults = l.count(True)
+    countOfNonTheoremResults = l.count(False)
+    countOfUnknownResults = l.count(None)
+
+    # (formula, consolidated result, prover[0] result, prover[0] proof, prover[1] result, prover[1] proof, ...)
+    consolidatedResult = [results[0][0], None]
+
+    # contradiction?
+    if countOfTheoremResults > 0 and countOfNonTheoremResults > 0:
+        print('Contradiction:', mleancop[1], mleantap[1], leo2[1], leo3[1], file=sys.stderr)
+        consolidatedResult[1] = 'Unknown'
+    elif countOfTheoremResults >= settings['theoremThreshold']:
+        consolidatedResult[1] = 'Theorem'
+    elif countOfTheoremResults >= settings['nonTheoremThreshold']:
+        consolidatedResult[1] = 'Non-Theorem'
+    else: consolidatedResult[1] = 'Unknown'
+
+    for r in results:
+        if r[1] is None:
+            proverResult = 'Unknown'
+        elif r[1]:
+            proverResult = 'Theorem'
+        else:
+            proverResult = 'Non-Theorem'
+        proverProof = r[2]
+
+        consolidatedResult += [proverResult, proverProof]
+
+    return tuple(consolidatedResult)
 
 def main():
     execStart = time.perf_counter()
     worldRank = MPI.COMM_WORLD.Get_rank()
+
+    assert ((MPI.COMM_WORLD.Get_size() % len(proverBuilders)) == 0 or MPI.COMM_WORLD.Get_size() == 1), 'Number of processors is not divisible by number of provers – some formulas would not be checked by all provers'
 
     # communicator only for leaders, there will be one leader in each work group
     if worldRank % len(proverBuilders) == 0:
@@ -96,11 +94,9 @@ def main():
     workComm = MPI.COMM_WORLD.Split(color=int(worldRank / len(proverBuilders)), key=worldRank % len(proverBuilders))
     
     if worldRank == 0:
-        # take only every 500th element (less waiting time, less trash on screen, only for debug)
         print('Start read')
         tstart = time.perf_counter()
         fs = readPickle()
-
         tend = time.perf_counter()
         print('End read:', tend - tstart, 's')
 
@@ -120,41 +116,57 @@ def main():
 
     # choose a prover builder lambda and run it to obtain prover object
     prover = proverBuilders[worldRank % len(proverBuilders)](worldRank)
+
+    # PROVE
     results = [prover.prove(f, settings['timeout']) for f in formulas]
 
     results = workComm.gather(results, root=0)
 
+    zippedResults = []
+    # if this is a group leader
+    if executiveComm != MPI.COMM_NULL:
+        assert len(results) == len(proverBuilders), 'len(results) != len(proverBuilders): %d != %d' % (len(results), len(proverBuilders))
+        # get a list of tuples: (first prover res, second prover res, ...)
+        zippedResults = list(zip(*results))
+
+        # split into as many pieces as there are processors
+        pieceSize = math.ceil(len(zippedResults) / workComm.Get_size())
+        zippedResults = [zippedResults[i:i + pieceSize] for i in range(0, len(zippedResults), pieceSize)]
+
+    zippedResults = workComm.scatter(zippedResults, root=0)
+
+    consolidatedResults = [consolidateResult(*r) for r in zippedResults]
+
+    # group leader collects consolidated results
+    consolidatedResults = workComm.gather(consolidatedResults, root=0)
+
+    # workers are done here
     if executiveComm == MPI.COMM_NULL:
-        # workers are done here
         execEnd = time.perf_counter()
         printStats('Worker', worldRank, execEnd - execStart, prover.name, prover.stats)
         return
 
-    assert len(results) == 4
-    finalResults = []
-    for i in range(len(results[0])): # iterate through each formula in every prover
-        mleancopResult = results[0][i]
-        mleantapResult = results[1][i]
-        leo2Result     = results[2][i]
-        leo3Result     = results[3][i]
+    assert len(consolidatedResults) == len(proverBuilders)
+    # flatten consolidated results list
+    consolidatedResults = [result for groupResults in consolidatedResults for result in groupResults]
 
-        definiteResult = mergeResults(mleancopResult, mleantapResult, leo2Result, leo3Result)
-        finalResults.append((definiteResult[0].toUnicodeString(), definiteResult[1], definiteResult[2], definiteResult[3]))
+    consolidatedResults = executiveComm.gather(consolidatedResults, root=0)
 
-    finalResults = executiveComm.gather(finalResults, root=0)
-
+    # leaders are done, only master remains
     if worldRank != 0:
-        # leaders are done, only master remains
         execEnd = time.perf_counter()
         printStats('Leader', worldRank, execEnd - execStart, prover.name, prover.stats)
         return
 
-    finalResults = [result for groupResults in finalResults for result in groupResults]
+    # flatten consolidated results
+    consolidatedResults = [result for groupResults in consolidatedResults for result in groupResults]
 
-    print('Final count of results:', len(finalResults))
+    print('Final count of results:', len(consolidatedResults))
     with open('results.csv', 'w', newline='') as csvfile:
         csvwriter = csv.writer(csvfile)
-        csvwriter.writerows(finalResults)
+        # write header
+        csvwriter.writerow(('Formula', 'final', 'mleancop result', 'mleancop proof', 'mleantap result', 'mleantap proof', 'leo3 result', 'leo3 proof'))
+        csvwriter.writerows(consolidatedResults)
 
     execEnd = time.perf_counter()
     printStats('Master', worldRank, execEnd - execStart, prover.name, prover.stats)

@@ -41,17 +41,17 @@ class MleantapProver(Prover):
             proveEnd = time.perf_counter()
             if mleantap.returncode == 0:
                 conclusionReached = True
-                return formula, True, None, None
+                return formula, True, None
             elif mleantap.returncode == 1:
                 conclusionReached = True
-                return formula, False, None, None
+                return formula, False, None
             else:
                 conclusionReached = False
-                return formula, None, None, None
+                return formula, None, None
         except subprocess.TimeoutExpired:
             proveEnd = time.perf_counter()
             conclusionReached = False
-            return formula, None, None, None
+            return formula, None, None
         finally:
             procEnd = time.perf_counter()
             # save stats

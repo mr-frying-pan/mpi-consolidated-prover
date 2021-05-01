@@ -12,16 +12,17 @@ class Prover(ABC):
             'timeProving': 0,
         }
 
+    # returns: (formula, result, proof)
     @abstractmethod
-    def prove(self, formula: Formula, timeout: int = None) -> (Formula, bool, str, str):
+    def prove(self, formula: Formula, timeout: int = None) -> (Formula, bool, str):
         pass
 
 class TestProver(Prover):
     def __init__(self, worldRank):
         super().__init__(worldRank, 'TestProver')
 
-    def prove(self, formula: Formula, timeout: int = None) -> (bool, str, str):
-        return formula, None, None, None
+    def prove(self, formula: Formula, timeout: int = None) -> (Formula, bool, str):
+        return formula, None, None
 
 class ProverConfigError(Exception):
     def __init__(prover: str, rank: int, msg: str):

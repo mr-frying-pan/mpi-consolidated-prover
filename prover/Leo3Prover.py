@@ -36,10 +36,9 @@ class Leo3Prover(Prover):
         self.leo3_jar_path = leo3_jar_path
 
     def prove(self, formula: Formula, timeout: int = None):
-        # using dash to read from stdin did not work
-        # using temporary file instead
         procStart = time.perf_counter()
         try:
+            # using dash to read from stdin did not work, using temporary file instead
             problemFile = self.generateProblemFile(formula)
             args = ['java', '-jar', self.leo3_jar_path,
                     # using - as filename to read the stdin did not work :( tries to find the file called -
@@ -58,11 +57,11 @@ class Leo3Prover(Prover):
                                   timeout=(2 * timeout or None))
             proveEnd = time.perf_counter()
             parsedOutput = self.parseOutput(leo3.stdout)
-            return formula, parsedOutput[0], parsedOutput[1], parsedOutput[2]
+            return formula, parsedOutput[0], parsedOutput[1]
         except subprocess.TimeoutExpired:
             proveEnd = time.perf_counter()
             parsedOutput = None
-            return formula, None, None, None
+            return formula, None, None
         finally:
             os.remove(problemFile)
 
@@ -92,8 +91,8 @@ class Leo3Prover(Prover):
                 proof = '%% %s' % proofType
 
         if status == 'Theorem':
-            return True, proof, None
-        return None, None, None
+            return True, proof
+        return None, None
 
     def generateProblemFile(self, formula: Formula):
         problem = '''

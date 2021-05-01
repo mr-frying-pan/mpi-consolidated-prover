@@ -19,7 +19,7 @@ class MleancopProver(Prover):
         self.domain = domain
         self.mleancop_dir = mleancop_dir or './'
 
-    def prove(self, formula: Formula, timeout: int = None) -> (Formula, bool, str, str):
+    def prove(self, formula: Formula, timeout: int = None) -> (Formula, bool, str):
         procStart = time.perf_counter()
         try:
             problemFile = self.generateProblemFile(formula)
@@ -60,11 +60,11 @@ class MleancopProver(Prover):
             else:
                 proof = None
                 
-            return formula, isTheorem, proof, None
+            return formula, isTheorem, proof
         except subprocess.TimeoutExpired:
             proveEnd = time.perf_counter()
             print('[WARNING] Rank: %d mleancop: swipl process left dangling!' % self.wr, file=sys.stderr)
-            return formula, None, None, None
+            return formula, None, None
         finally:
             os.remove(problemFile)
 
