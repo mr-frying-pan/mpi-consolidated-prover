@@ -4,10 +4,18 @@ from prover.MleancopProver import MleancopProver
 from prover.MleantapProver import MleantapProver
 from prover.Leo3Prover import Leo3Prover
 from generator import Formula
+from settings import settings
+
 import time
 import math
 import csv
 import sys
+
+proverBuilders = [
+    lambda wr: MleancopProver(wr, mleancop_dir=settings['mleancop_dir']),
+    lambda wr: MleantapProver(wr, mleantap_path=settings['mleantap_path']),
+    lambda wr: Leo3Prover(wr, leo3_jar_path=settings['leo3_jar_path']),
+]
 
 # result format (isTheorem, proof, counter)
 def mergeResults(mleancop, mleantap, leo2, leo3):
@@ -52,17 +60,8 @@ def mergeResults(mleancop, mleantap, leo2, leo3):
 
 def readPickle():
     import pickle
-    with open('pickle_formulas.dat', 'rb') as f:
+    with open(settings['formula_pickle_path'], 'rb') as f:
         return pickle.load(f)
-
-def selectProver(worldRank):
-    provers = [
-        MleancopProver(worldRank, mleancop_dir='./prover_install/mleancop13/'),
-        MleantapProver(worldRank, mleantap_path='./prover_install/mleantap13/mleantap13_swi.pl'),
-        TestProver(worldRank),
-        Leo3Prover(worldRank, leo3_jar_path='./prover_install/leo3/leo3.jar'),
-    ]
-    return provers[worldRank % 4]
 
 def printStats(role, wr, time, prover, report):
     stats = '''
@@ -86,21 +85,21 @@ def main():
     worldRank = MPI.COMM_WORLD.Get_rank()
 
     # communicator only for leaders, there will be one leader in each work group
-    if worldRank % 4 == 0:
+    if worldRank % len(proverBuilders) == 0:
         executiveColor = 1
     else:
         executiveColor = MPI.UNDEFINED
     executiveComm = MPI.COMM_WORLD.Split(color=executiveColor, key=0)
 
-    # worker communicators: groups of 4 processes, each for single prover, leader included
+    # worker communicators: groups of processes, each for single prover, leader included
     # key makes sure group leader will get rank 0
-    workComm = MPI.COMM_WORLD.Split(color=int(worldRank / 4), key=worldRank % 4)
+    workComm = MPI.COMM_WORLD.Split(color=int(worldRank / len(proverBuilders)), key=worldRank % len(proverBuilders))
     
     if worldRank == 0:
         # take only every 500th element (less waiting time, less trash on screen, only for debug)
         print('Start read')
         tstart = time.perf_counter()
-        fs = readPickle()[::500]
+        fs = readPickle()
 
         tend = time.perf_counter()
         print('End read:', tend - tstart, 's')
@@ -108,7 +107,7 @@ def main():
         print('Initial formula count:', len(fs))
 
         # split formulas list into as many pieces as there are groups.
-        # This is done because data being scattered must contain exactly as many elements as there are processors
+        # Data being scattered must contain exactly as many elements as there are processors
         pieceSize = math.ceil(len(fs) / executiveComm.Get_size())
         formulas = [fs[i:i + pieceSize] for i in range(0, len(fs), pieceSize)]
     else:
@@ -119,8 +118,9 @@ def main():
 
     formulas = workComm.bcast(formulas, root=0)
 
-    prover = selectProver(worldRank)
-    results = [prover.prove(f, 5) for f in formulas]
+    # choose a prover builder lambda and run it to obtain prover object
+    prover = proverBuilders[worldRank % len(proverBuilders)](worldRank)
+    results = [prover.prove(f, settings['timeout']) for f in formulas]
 
     results = workComm.gather(results, root=0)
 
