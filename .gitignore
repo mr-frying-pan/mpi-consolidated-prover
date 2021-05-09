@@ -131,5 +131,5 @@ dmypy.json
 # Custom project things
 test_files/**/*
 prover_build/**/*
-pickle_formulas.dat
+formulas.pickle
 results.csv
