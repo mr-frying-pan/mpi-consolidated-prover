@@ -6,7 +6,7 @@ settings = {
     'java_path': 'java',
     'swipl_path': 'swipl',
     'node_path': 'node',
-    'formula_pickle_path': 'tiny.pickle',
+    'formula_pickle_path': 'full.pickle',
     'output_file_path': 'results.csv',
     'logic': 's5',
     'domain': 'vary',

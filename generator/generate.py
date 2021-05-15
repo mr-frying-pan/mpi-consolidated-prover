@@ -7,6 +7,7 @@ from .Formula import impl, conj
 
 n = None
 m = 1
+s = 0
 
 def generate():
     letters = ["A", "E", "I", "O"]
@@ -46,7 +47,7 @@ def generate():
                                             conclusionType, conclusionModalType,\
                                             fig);
                                 allFormulas.add(full);
-                                if n is not None and len(allFormulas) >= n * m:
+                                if n is not None and len(allFormulas) >= s + n * m:
                                     return list(allFormulas)
     return list(allFormulas)
 
@@ -82,8 +83,9 @@ def parseArgs():
     parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument('-n', help='number of formulas to output (taken from the start) (default behaviour is to output all formulas)', type=positive_int)
     parser.add_argument('-m', help='every which formula to output (default=1)', type=positive_int, default=1)
+    parser.add_argument('-s', help='skip number of formulas from the beginning', type=positive_int, default=0)
     outputFormatGroup = parser.add_mutually_exclusive_group(required=True)
-    outputFormatGroup.add_argument('-s', '--unicode', dest='outputFormat', action='store_const', const='s')
+    outputFormatGroup.add_argument('-u', '--unicode', dest='outputFormat', action='store_const', const='u')
     outputFormatGroup.add_argument('-r', '--repr', dest='outputFormat', action='store_const', const='r')
     outputFormatGroup.add_argument('-p', '--prolog', dest='outputFormat', action='store_const', const='p')
     outputFormatGroup.add_argument('-P', '--pickle', dest='outputFormat', action='store_const', const='P')
@@ -94,6 +96,8 @@ def parseArgs():
     n = args.n
     global m
     m = args.m
+    global s
+    s = args.s
     return args.outputFormat
     
 if __name__ == '__main__':
@@ -103,13 +107,13 @@ if __name__ == '__main__':
     outputFormat = parseArgs()
     fs = generate()
 
-    if outputFormat == 's':
-        printUnicode(fs[::m])
+    if outputFormat == 'u':
+        printUnicode(fs[s::m])
     elif outputFormat == 'r':
-        printReprs(fs[::m])
+        printReprs(fs[s::m])
     elif outputFormat == 'p':
-        printProlog(fs[::m])
+        printProlog(fs[s::m])
     elif outputFormat == 'P':
-        printPickle(fs[::m])
+        printPickle(fs[s::m])
     elif outputFormat == 't':
-        printTHF(fs[::m])
+        printTHF(fs[s::m])
