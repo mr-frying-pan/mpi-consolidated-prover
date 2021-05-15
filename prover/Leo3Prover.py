@@ -7,7 +7,7 @@ from .Prover import Prover
 from generator.Formula import Formula
 
 class Leo3Prover(Prover):
-    def __init__(self, worldRank: int, leo3_jar_path: str = './leo3.jar', logic: str = None, domain: str = None):
+    def __init__(self, worldRank: int, leo3_jar_path: str = './leo3.jar', java_path: str = 'java', logic: str = None, domain: str = None):
         super().__init__(worldRank, 'LEO-III')
 
         if logic not in ['k', 't', 'd', 's4', 's5', None]:
@@ -34,13 +34,14 @@ class Leo3Prover(Prover):
         self.domain = domainTranslations[domain]
 
         self.leo3_jar_path = leo3_jar_path
+        self.java_path = java_path
 
     def prove(self, formula: Formula, timeout: int = None) -> (Formula, bool, str):
         procStart = time.perf_counter()
         try:
             # using dash to read from stdin did not work, using temporary file instead
             problemFile = self.generateProblemFile(formula)
-            args = ['java', '-jar', self.leo3_jar_path,
+            args = [self.java_path, '-jar', self.leo3_jar_path,
                     # using - as filename to read the stdin did not work :( tries to find the file called -
                     problemFile, 
                     '-v', '0',   # decrease output

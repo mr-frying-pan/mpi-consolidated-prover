@@ -14,9 +14,9 @@ import sys
 
 proverBuilders = [
     lambda wr: MleancopProver(wr, mleancop_dir=settings['mleancop_dir']),
-    lambda wr: MleantapProver(wr, mleantap_path=settings['mleantap_path']),
-    lambda wr: Leo3Prover(wr, leo3_jar_path=settings['leo3_jar_path']),
-    lambda wr: TPGProver(wr, tpg_dir=settings['tpg_dir']),
+    lambda wr: MleantapProver(wr, mleantap_path=settings['mleantap_path'], prolog_path=settings['swilp_path']),
+    lambda wr: Leo3Prover(wr, leo3_jar_path=settings['leo3_jar_path'], java_path=settings['java_path']),
+    lambda wr: TPGProver(wr, tpg_dir=settings['tpg_dir'], node_path=settings['node_path']),
 ]
 
 def readPickle():
@@ -61,9 +61,10 @@ def consolidateResult(*results):
         consolidatedResult[1] = 'Unknown'
     elif countOfTheoremResults >= settings['theoremThreshold']:
         consolidatedResult[1] = 'Theorem'
-    elif countOfTheoremResults >= settings['nonTheoremThreshold']:
+    elif countOfNonTheoremResults >= settings['nonTheoremThreshold']:
         consolidatedResult[1] = 'Non-Theorem'
-    else: consolidatedResult[1] = 'Unknown'
+    else:
+        consolidatedResult[1] = 'Unknown'
 
     for r in results:
         if r[1] is None:
@@ -164,7 +165,7 @@ def main():
     consolidatedResults = [result for groupResults in consolidatedResults for result in groupResults]
 
     print('Final count of results:', len(consolidatedResults))
-    with open('results.csv', 'w', newline='') as csvfile:
+    with open(settings['output_file_path'], 'w', newline='') as csvfile:
         csvwriter = csv.writer(csvfile)
         # write header
         csvwriter.writerow(('Formula', 'final', 'mleancop result', 'mleancop proof', 'mleantap result', 'mleantap proof', 'leo3 result', 'leo3 proof', 'tpg result', 'tpg proof'))
