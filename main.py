@@ -13,10 +13,17 @@ import csv
 import sys
 
 proverBuilders = [
-    lambda wr: MleancopProver(wr, mleancop_dir=settings['mleancop_dir']),
-    lambda wr: MleantapProver(wr, mleantap_path=settings['mleantap_path'], prolog_path=settings['swilp_path']),
-    lambda wr: Leo3Prover(wr, leo3_jar_path=settings['leo3_jar_path'], java_path=settings['java_path']),
-    lambda wr: TPGProver(wr, tpg_dir=settings['tpg_dir'], node_path=settings['node_path']),
+    lambda wr: MleancopProver(wr, mleancop_dir=settings['mleancop_dir'],
+                         logic=settings['logic'],
+                         domain=settings['domain']),
+    lambda wr: MleantapProver(wr, mleantap_path=settings['mleantap_path'],
+                         prolog_path=settings['swipl_path'],
+                         logic=settings['logic'],
+                         domain=settings['domain']),
+    lambda wr: Leo3Prover(wr, leo3_jar_path=settings['leo3_jar_path'],
+                     java_path=settings['java_path'],
+                     logic=settings['logic'],
+                     domain=settings['domain']),
 ]
 
 def readPickle():
@@ -83,7 +90,7 @@ def main():
     execStart = time.perf_counter()
     worldRank = MPI.COMM_WORLD.Get_rank()
 
-    assert ((MPI.COMM_WORLD.Get_size() % len(proverBuilders)) == 0 or MPI.COMM_WORLD.Get_size() == 1), 'Number of processors is not divisible by number of provers – some formulas would not be checked by all provers'
+    assert (MPI.COMM_WORLD.Get_size() % len(proverBuilders)) == 0, 'Number of processors is not divisible by number of provers – some formulas would not be checked by all provers (procs: %d ; provers: %d)' % (MPI.COMM_WORLD.Get_size(), len(proverBuilders))
 
     # communicator only for leaders, there will be one leader in each work group
     if worldRank % len(proverBuilders) == 0:

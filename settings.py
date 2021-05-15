@@ -9,7 +9,7 @@ settings = {
     'formula_pickle_path': 'tiny.pickle',
     'output_file_path': 'results.csv',
     'logic': 's5',
-    'domain': 'const',
+    'domain': 'vary',
     'timeout': 10,
     'theoremThreshold': 1,
     'nonTheoremThreshold': 1,
