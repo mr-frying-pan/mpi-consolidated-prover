@@ -21,6 +21,7 @@ class MleancopProver(Prover):
 
     def prove(self, formula: Formula, timeout: int = None) -> (Formula, bool, str):
         procStart = time.perf_counter()
+        isTheorem = None # define to avoid error
         try:
             problemFile = self.generateProblemFile(formula)
             
