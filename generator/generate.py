@@ -83,7 +83,7 @@ def parseArgs():
     parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument('-n', help='number of formulas to output (taken from the start) (default behaviour is to output all formulas)', type=positive_int)
     parser.add_argument('-m', help='every which formula to output (default=1)', type=positive_int, default=1)
-    parser.add_argument('-s', help='skip number of formulas from the beginning', type=positive_int, default=0)
+    parser.add_argument('-s', help='skip number of formulas from the beginning', type=int, default=0)
     outputFormatGroup = parser.add_mutually_exclusive_group(required=True)
     outputFormatGroup.add_argument('-u', '--unicode', dest='outputFormat', action='store_const', const='u')
     outputFormatGroup.add_argument('-r', '--repr', dest='outputFormat', action='store_const', const='r')
