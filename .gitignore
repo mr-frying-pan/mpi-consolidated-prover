@@ -132,4 +132,6 @@ dmypy.json
 test_files/**/*
 prover_build/**/*
 *.pickle
-results.csv
+*.csv
+# Libreoffice lock files
+.~lock.*

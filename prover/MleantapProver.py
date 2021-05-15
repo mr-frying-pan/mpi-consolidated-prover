@@ -21,9 +21,8 @@ class MleantapProver(Prover):
         self.prolog_options = prolog_options or ['--no-debug']
         # just in case
         self.mleantap_path = mleantap_path or './mleantap13_swi.pl'
-        self.formulaStr = None
 
-    def prove(self, formula: Formula, timeout: int = None) -> (Formula, bool, str, str):
+    def prove(self, formula: Formula, timeout: int = None) -> (Formula, bool, str):
         procStart = time.perf_counter()
         try:
             proveStart = time.perf_counter()

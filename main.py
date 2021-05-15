@@ -3,6 +3,7 @@ from prover.Prover import TestProver
 from prover.MleancopProver import MleancopProver
 from prover.MleantapProver import MleantapProver
 from prover.Leo3Prover import Leo3Prover
+from prover.TPGProver import TPGProver
 from generator import Formula
 from settings import settings
 
@@ -15,6 +16,7 @@ proverBuilders = [
     lambda wr: MleancopProver(wr, mleancop_dir=settings['mleancop_dir']),
     lambda wr: MleantapProver(wr, mleantap_path=settings['mleantap_path']),
     lambda wr: Leo3Prover(wr, leo3_jar_path=settings['leo3_jar_path']),
+    lambda wr: TPGProver(wr, tpg_dir=settings['tpg_dir']),
 ]
 
 def readPickle():
@@ -165,7 +167,7 @@ def main():
     with open('results.csv', 'w', newline='') as csvfile:
         csvwriter = csv.writer(csvfile)
         # write header
-        csvwriter.writerow(('Formula', 'final', 'mleancop result', 'mleancop proof', 'mleantap result', 'mleantap proof', 'leo3 result', 'leo3 proof'))
+        csvwriter.writerow(('Formula', 'final', 'mleancop result', 'mleancop proof', 'mleantap result', 'mleantap proof', 'leo3 result', 'leo3 proof', 'tpg result', 'tpg proof'))
         csvwriter.writerows(consolidatedResults)
 
     execEnd = time.perf_counter()

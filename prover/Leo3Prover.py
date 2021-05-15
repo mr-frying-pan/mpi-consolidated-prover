@@ -35,7 +35,7 @@ class Leo3Prover(Prover):
 
         self.leo3_jar_path = leo3_jar_path
 
-    def prove(self, formula: Formula, timeout: int = None):
+    def prove(self, formula: Formula, timeout: int = None) -> (Formula, bool, str):
         procStart = time.perf_counter()
         try:
             # using dash to read from stdin did not work, using temporary file instead
