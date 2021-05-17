@@ -26,17 +26,20 @@ class MleantapProver(Prover):
         procStart = time.perf_counter()
         try:
             proveStart = time.perf_counter()
-            mleantap = subprocess.run([self.prolog_path] + self.prolog_options
-                                      + [
-                                          '-g', "['%s']." % (self.mleantap_path,),
-                                          '-g', "asserta(logic(%s))." % (self.logic,),
-                                          '-g', "asserta(domain(%s))." % (self.domain,),
-                                          '-g', "( prove( %s ) -> halt(0) ; halt(1) )." % (formula.toPrologTerm(),),
-                                          '-t', "halt."
-                                      ],
-                                      universal_newlines=True,           # to be able to get output as a string
-                                      stdout=subprocess.PIPE,            # capture stdout (remove noise)
-                                      timeout=timeout or None)            # set timeout (only hard timeout)
+            cmd = '%s %s -g "[\'%s\']." -g "asserta(logic(%s))." -g "asserta(domain(%s))." -g "( prove( %s ) -> halt(0) ; halt(1) )." -t "halt(2)."' % (self.prolog_path, ' '.join(self.prolog_options), self.mleantap_path, self.logic, self.domain, formula.toPrologTerm())
+            print(cmd)
+            mleantap = subprocess.run(cmd, shell=True, universal_newlines=True, stdout=subprocess.PIPE, timeout=timeout or None)
+            # mleantap = subprocess.run([self.prolog_path] + self.prolog_options
+            #                           + [
+            #                               '-g', "['%s']." % (self.mleantap_path,),
+            #                               '-g', "asserta(logic(%s))." % (self.logic,),
+            #                               '-g', "asserta(domain(%s))." % (self.domain,),
+            #                               '-g', "( prove( %s ) -> halt(0) ; halt(1) )." % (formula.toPrologTerm(),),
+            #                               '-t', "halt."
+            #                           ],
+            #                           universal_newlines=True,           # to be able to get output as a string
+            #                           stdout=subprocess.PIPE,            # capture stdout (remove noise)
+            #                           timeout=timeout or None)            # set timeout (only hard timeout)
             proveEnd = time.perf_counter()
             if mleantap.returncode == 0:
                 conclusionReached = True
