@@ -1,4 +1,4 @@
-const Prover = require('./prover.js');
+const { Prover, Node } = require('./prover.js');
 
 // Unlike Tree objects, SenTrees have their nodes really stored in tree form,
 // with a root node and children/parent attributes.  Other than that, the nodes

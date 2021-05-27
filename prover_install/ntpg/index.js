@@ -1,5 +1,5 @@
 const Parser = require('./parser.js');
-const Prover = require('./prover.js');
+const { Prover, Node } = require('./prover.js');
 const SenTree = require('./sentree.js');
 const XmlPainter = require('./xmlpainter.js');
 

@@ -20,10 +20,14 @@ proverBuilders = [
                          prolog_path=settings['swipl_path'],
                          logic=settings['logic'],
                          domain=settings['domain']),
-    lambda wr: Leo3Prover(wr, leo3_jar_path=settings['leo3_jar_path'],
-                     java_path=settings['java_path'],
-                     logic=settings['logic'],
-                     domain=settings['domain']),
+    # lambda wr: Leo3Prover(wr, leo3_jar_path=settings['leo3_jar_path'],
+    #                  java_path=settings['java_path'],
+    #                  logic=settings['logic'],
+    #                  domain=settings['domain']),
+    lambda wr: TPGProver(wr, tpg_dir=settings['tpg_dir'],
+                    node_path=settings['node_path'],
+                    logic=settings['logic'],
+                    domain=settings['domain']),
 ]
 
 def readPickle():
@@ -132,33 +136,20 @@ def main():
 
     results = workComm.gather(results, root=0)
 
-    zippedResults = []
-    # if this is a group leader
-    if executiveComm != MPI.COMM_NULL:
-        assert len(results) == len(proverBuilders), 'len(results) != len(proverBuilders): %d != %d' % (len(results), len(proverBuilders))
-        # get a list of tuples: (first prover res, second prover res, ...)
-        zippedResults = list(zip(*results))
-
-        # split into as many pieces as there are processors
-        pieceSize = math.ceil(len(zippedResults) / workComm.Get_size())
-        zippedResults = [zippedResults[i:i + pieceSize] for i in range(0, len(zippedResults), pieceSize)]
-
-    zippedResults = workComm.scatter(zippedResults, root=0)
-
-    consolidatedResults = [consolidateResult(*r) for r in zippedResults]
-
-    # group leader collects consolidated results
-    consolidatedResults = workComm.gather(consolidatedResults, root=0)
-
     # workers are done here
     if executiveComm == MPI.COMM_NULL:
         execEnd = time.perf_counter()
         printStats('Worker', worldRank, execEnd - execStart, prover.name, prover.stats)
         return
 
-    assert len(consolidatedResults) == len(proverBuilders)
-    # flatten consolidated results list
-    consolidatedResults = [result for groupResults in consolidatedResults for result in groupResults]
+    zippedResults = []
+    
+    # get a list of tuples: (first prover res, second prover res, ...)
+    zippedResults = list(zip(*results))
+        
+    # group leader consolidates results
+    assert len(results) == len(proverBuilders), 'len(results) != len(proverBuilders): %d != %d' % (len(results), len(proverBuilders))
+    consolidatedResults = [consolidateResult(*r) for r in zippedResults]
 
     consolidatedResults = executiveComm.gather(consolidatedResults, root=0)
 
@@ -175,7 +166,7 @@ def main():
     with open(settings['output_file_path'], 'w', newline='') as csvfile:
         csvwriter = csv.writer(csvfile)
         # write header
-        csvwriter.writerow(('Formula', 'final', 'mleancop result', 'mleancop proof', 'mleantap result', 'mleantap proof', 'leo3 result', 'leo3 proof', 'tpg result', 'tpg proof'))
+        csvwriter.writerow(('Formula', 'final', 'mleancop result', 'mleancop proof', 'mleantap result', 'mleantap proof', 'tpg result', 'tpg proof'))
         csvwriter.writerows(consolidatedResults)
 
     execEnd = time.perf_counter()

@@ -1100,4 +1100,7 @@ Node.prototype.toString = function() {
     return this.formula.string;
 }
 
-module.exports = Prover;
+module.exports = {
+    Prover,
+    Node
+};
