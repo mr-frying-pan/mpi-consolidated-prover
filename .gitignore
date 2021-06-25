@@ -135,3 +135,5 @@ prover_build/**/*
 *.csv
 # Libreoffice lock files
 .~lock.*
+# Results folder, is not supposed to be in version control
+results/

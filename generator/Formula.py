@@ -10,6 +10,7 @@ class Formula:
         self.isTheorem = None
         self.proof = None
         self.counter = None
+        self.uid = None
 
     def renamePreds(self, predName: str, newName: str):
         if(self._kind == 'pred' and self._name == predName):
