@@ -1,5 +1,4 @@
 from mpi4py import MPI
-from prover.Prover import TestProver
 from prover.MleancopProver import MleancopProver
 from prover.MleantapProver import MleantapProver
 from prover.Leo3Prover import Leo3Prover
@@ -20,10 +19,10 @@ proverBuilders = [
                          prolog_path=settings['swipl_path'],
                          logic=settings['logic'],
                          domain=settings['domain']),
-    # lambda wr: Leo3Prover(wr, leo3_jar_path=settings['leo3_jar_path'],
-    #                  java_path=settings['java_path'],
-    #                  logic=settings['logic'],
-    #                  domain=settings['domain']),
+    lambda wr: Leo3Prover(wr, leo3_jar_path=settings['leo3_jar_path'],
+                     java_path=settings['java_path'],
+                     logic=settings['logic'],
+                     domain=settings['domain']),
     lambda wr: TPGProver(wr, tpg_dir=settings['tpg_dir'],
                     node_path=settings['node_path'],
                     logic=settings['logic'],
@@ -38,7 +37,7 @@ def readPickle():
 def printStats(role, wr, time, prover, report):
     stats = '''
 =======================================
-    %s %d lasted for:       %.2f s
+    %s %d lasted for:    %.2f s
     Prover:                 %s
     Stats:
         running time:       %.2f s
@@ -94,7 +93,9 @@ def main():
     execStart = time.perf_counter()
     worldRank = MPI.COMM_WORLD.Get_rank()
 
-    assert (MPI.COMM_WORLD.Get_size() % len(proverBuilders)) == 0, 'Number of processors is not divisible by number of provers – some formulas would not be checked by all provers (procs: %d ; provers: %d)' % (MPI.COMM_WORLD.Get_size(), len(proverBuilders))
+    assert (MPI.COMM_WORLD.Get_size() % len(proverBuilders)) == 0,\
+        ('Number of processors is not divisible by number of provers – some formulas would not be checked by ' + \
+        'all provers (procs: %d ; provers: %d)') % (MPI.COMM_WORLD.Get_size(), len(proverBuilders))
 
     # communicator only for leaders, there will be one leader in each work group
     if worldRank % len(proverBuilders) == 0:
