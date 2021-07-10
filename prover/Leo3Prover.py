@@ -43,7 +43,7 @@ class Leo3Prover(Prover):
             problemFile = self.generateProblemFile(formula)
             args = [self.java_path, '-jar', self.leo3_jar_path,
                     # using - as filename to read the stdin did not work :( tries to find the file called -
-                    problemFile, 
+                    problemFile,
                     '-v', '0',   # decrease output
                     '-p']        # output proof
             if timeout:
@@ -89,7 +89,7 @@ class Leo3Prover(Prover):
             elif status is not None and status == 'Theorem' and line.startswith('% SZS output start'):
                 proofStarted = True
                 proofType = line.split(' ')[4]
-                proof = '%% %s' % proofType
+                proof = '%% %s\n' % proofType
 
         if status == 'Theorem':
             return True, proof

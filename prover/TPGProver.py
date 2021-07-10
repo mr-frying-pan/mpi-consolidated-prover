@@ -39,8 +39,9 @@ class TPGProver(Prover):
 
             # first line, second token
             status = lines[0].split(' ')[1]
-            # second line is PROOF START and last line is PROOF END
-            proof = lines[2:-1]
+            # second line is PROOF START and last line is PROOF END (right number from : is inclusive)
+            # Need to take the first line in the resulting list
+            proof = lines[2:-2][0]
             statusMap = {
                 'Theorem' : True,
                 'Non-Theorem': False
