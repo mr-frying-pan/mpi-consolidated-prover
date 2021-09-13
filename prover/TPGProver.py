@@ -11,7 +11,7 @@ class TPGProver(Prover):
         if logic not in ['s5', None]: # supporting only s5 for now because I am lazy
             raise ProverConfigError('tpg', self.wr, "Value '%s' is not recognized as 'logic' value" % (logic,))
         if domain not in ['const', None]: # no other domain is supported
-            raise ProverConfigError('mleantap', self.wr, "Value '%s' is not recognized as 'domain' value" % (domain,))
+            raise ProverConfigError('tpg', self.wr, "Value '%s' is not recognized as 'domain' value" % (domain,))
 
         # r – reflexive, m – symmetric, t – transitive
         self.accessibility = 'rmt' # no ifs because I am too lazy to implement other logics
